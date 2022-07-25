@@ -29,3 +29,10 @@ func BroadcastIntervall(d time.Duration) Setting {
 		m.checkIntervall = d
 	}
 }
+
+// Purge defines the intervall after wich peers are deleted
+func Purge(d time.Duration) Setting {
+	return func(m *Mgr) {
+		m.purgeIntervall = d
+	}
+}

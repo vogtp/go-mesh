@@ -25,6 +25,7 @@ type Mgr struct {
 	running        bool
 	connectToNew   bool
 	checkIntervall time.Duration
+	purgeIntervall time.Duration
 	bPod           *grav.Pod
 	rPod           *grav.Pod
 	NodeCfg        *NodeConfig
@@ -51,6 +52,7 @@ func New(g *grav.Grav, cfg *NodeConfig, settings ...Setting) *Mgr {
 		running:        true,
 		connectToNew:   false,
 		checkIntervall: 5 * time.Minute,
+		purgeIntervall: 10 * time.Minute,
 		NodeCfg:        cfg,
 	}
 	for _, s := range settings {
@@ -80,7 +82,7 @@ func (m *Mgr) updatePeers() {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	for k, p := range m.NodeCfg.Peers {
-		if time.Since(p.LastSeen) > 10*time.Minute {
+		if time.Since(p.LastSeen) > m.purgeIntervall {
 			delete(m.NodeCfg.Peers, k)
 		}
 	}
@@ -153,7 +155,7 @@ func (m *Mgr) processPeer(cfg NodeConfig) bool {
 		return false
 	}
 	m.mu.Lock()
-	m.mu.Unlock()
+	defer m.mu.Unlock()
 	// remove peers of peers (wo do not want a deep recursiv tree)
 	for _, p := range cfg.Peers {
 		p.Peers = nil
