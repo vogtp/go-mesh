@@ -187,9 +187,9 @@ func (m *Mgr) connectPeer(cfg *NodeConfig) error {
 // HandlerInfo serves a info page
 func (m *Mgr) HandlerInfo(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, "Self:\n  %-30s %-40s (connect peers: %v)\nPeers:\n", m.NodeCfg.Name, m.NodeCfg.Endpoint, m.connectToNew)
+	fmt.Fprintf(w, "Self:\n  %-45s %-40s (connect peers: %v)\nPeers:\n", m.NodeCfg.Name, m.NodeCfg.Endpoint, m.connectToNew)
 	for _, p := range m.NodeCfg.Peers {
-		fmt.Fprintf(w, "  %-30s %-40s Last seen: %v\n", p.Name, p.Endpoint, time.Since(p.LastSeen).Truncate(time.Second))
+		fmt.Fprintf(w, "  %-45s %-40s Last seen: %v\n", p.Name, p.Endpoint, time.Since(p.LastSeen).Truncate(time.Second))
 	}
 }
 
