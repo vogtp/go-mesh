@@ -37,20 +37,20 @@ type NodeConfig struct {
 	Name     string
 	Endpoint string
 	LastSeen time.Time
-	Peers    map[string]NodeConfig
+	Peers    map[string]*NodeConfig
 }
 
 // New creates a mesh Mgr
 func New(g *grav.Grav, cfg *NodeConfig, settings ...Setting) *Mgr {
 	if cfg.Peers == nil {
-		cfg.Peers = make(map[string]NodeConfig, 0)
+		cfg.Peers = make(map[string]*NodeConfig, 0)
 	}
 	cfg.Endpoint = removeHTTPPrefix(cfg.Endpoint)
 	m := &Mgr{
 		hcl:            hcl.New(),
 		grav:           g,
 		running:        true,
-		connectToNew:   false,
+		connectToNew:   true,
 		checkIntervall: 5 * time.Minute,
 		purgeIntervall: 10 * time.Minute,
 		NodeCfg:        cfg,
@@ -97,7 +97,7 @@ func (m *Mgr) sendBroadcast() {
 	}
 	p := m.grav.Connect()
 	defer p.Disconnect()
-	m.hcl.Info("Sending mesh broadcast")
+	m.hcl.Debug("Sending mesh broadcast")
 	p.Send(grav.NewMsg(msgTypeBroadcast, d))
 }
 
@@ -116,7 +116,7 @@ func (m *Mgr) startReceiver() {
 	m.rPod = m.grav.Connect()
 	go m.bPod.OnType(msgTypeBroadcast, func(msg grav.Message) error {
 		ok := m.processMsg(msg)
-		if !ok || !m.connectToNew {
+		if !ok || !m.connectToNew || len(m.NodeCfg.Peers) < 2 {
 			return nil
 		}
 		d, err := json.Marshal(m.NodeCfg)
@@ -126,7 +126,7 @@ func (m *Mgr) startReceiver() {
 		}
 		p := m.grav.Connect()
 		defer p.Disconnect()
-		m.hcl.Info("Reply to message: ")
+		m.hcl.Debug("Reply to message")
 		p.ReplyTo(msg, grav.NewMsg(msgTypeReply, d))
 		return nil
 	})
@@ -137,11 +137,12 @@ func (m *Mgr) startReceiver() {
 }
 
 func (m *Mgr) processMsg(msg grav.Message) bool {
-	cfg := NodeConfig{Peers: make(map[string]NodeConfig)}
-	if err := json.Unmarshal(msg.Data(), &cfg); err != nil {
+	cfg := &NodeConfig{Peers: make(map[string]*NodeConfig)}
+	if err := json.Unmarshal(msg.Data(), cfg); err != nil {
 		m.hcl.Errorf("cannot unmarshal config: %v", err)
 		return false
 	}
+	m.hcl.Tracef("Message size: %v (Peers: %v)", len(msg.Data()), len(cfg.Peers))
 	cfg.LastSeen = time.Now()
 
 	for _, p := range cfg.Peers {
@@ -150,7 +151,7 @@ func (m *Mgr) processMsg(msg grav.Message) bool {
 	return m.processPeer(cfg)
 }
 
-func (m *Mgr) processPeer(cfg NodeConfig) bool {
+func (m *Mgr) processPeer(cfg *NodeConfig) bool {
 	if cfg.NodeUUID == m.grav.NodeUUID {
 		return false
 	}
@@ -174,13 +175,12 @@ func (m *Mgr) processPeer(cfg NodeConfig) bool {
 	return true
 }
 
-func (m *Mgr) connectPeer(cfg NodeConfig) error {
+func (m *Mgr) connectPeer(cfg *NodeConfig) error {
 	if !m.connectToNew {
 		return nil
 	}
-	m.hcl.Infof("Connecting peer: %s", cfg.Name)
+	m.hcl.Infof("New mesh node: %s %s %s ", cfg.Name, cfg.NodeUUID, cfg.Endpoint)
 	cfg.Endpoint = removeHTTPPrefix(cfg.Endpoint)
-	m.hcl.Infof("Node not known: %s %s %s ", cfg.Name, cfg.NodeUUID, cfg.Endpoint)
 	return m.grav.ConnectEndpoint(cfg.Endpoint)
 }
 
