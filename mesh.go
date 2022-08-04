@@ -119,6 +119,8 @@ func (m *Mgr) startReceiver() {
 		if !ok || !m.connectToNew || len(m.NodeCfg.Peers) < 2 {
 			return nil
 		}
+		m.mu.Lock()
+		defer m.mu.Unlock()
 		d, err := json.Marshal(m.NodeCfg)
 		if err != nil {
 			m.hcl.Errorf("Cannot marshal node config: %v", err)
