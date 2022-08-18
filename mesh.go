@@ -203,8 +203,8 @@ func (m *Mgr) HandlerInfo(w http.ResponseWriter, r *http.Request) {
 	}
 	nLen += 2.
 	eLen += 2.
-	frmt := fmt.Sprintf("Self:\n  %%-%vs %%-%vs (connect peers: %%v)\nPeers:\n", int(nLen), int(eLen))
-	fmt.Fprintf(w, frmt, m.NodeCfg.Name, m.NodeCfg.Endpoint, m.connectToNew)
+	frmt := fmt.Sprintf("Self:\n  %%-%vs %%-%vs (connect peers: %%v)\nPeers (%%v):\n", int(nLen), int(eLen))
+	fmt.Fprintf(w, frmt, m.NodeCfg.Name, m.NodeCfg.Endpoint, m.connectToNew, len(m.NodeCfg.Peers))
 	frmt = fmt.Sprintf("  %%-%vs %%-%vs Last seen: %%v\n", int(nLen), int(eLen))
 	sort.Slice(uuids, func(i, j int) bool {
 		return m.NodeCfg.Peers[uuids[i]].Name < m.NodeCfg.Peers[uuids[j]].Name
