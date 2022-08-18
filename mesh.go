@@ -3,7 +3,9 @@ package mesh
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"net/http"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -188,10 +190,28 @@ func (m *Mgr) connectPeer(cfg *NodeConfig) error {
 
 // HandlerInfo serves a info page
 func (m *Mgr) HandlerInfo(w http.ResponseWriter, r *http.Request) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, "Self:\n  %-45s %-40s (connect peers: %v)\nPeers:\n", m.NodeCfg.Name, m.NodeCfg.Endpoint, m.connectToNew)
-	for _, p := range m.NodeCfg.Peers {
-		fmt.Fprintf(w, "  %-45s %-40s Last seen: %v\n", p.Name, p.Endpoint, time.Since(p.LastSeen).Truncate(time.Second))
+	nLen := 20.
+	eLen := 20.
+	uuids := make([]string, 0, len(m.NodeCfg.Peers))
+	for id, p := range m.NodeCfg.Peers {
+		nLen = math.Max(nLen, float64(len(p.Name)))
+		eLen = math.Max(eLen, float64(len(p.Endpoint)))
+		uuids = append(uuids, id)
+	}
+	nLen += 2.
+	eLen += 2.
+	frmt := fmt.Sprintf("Self:\n  %%-%vs %%-%vs (connect peers: %%v)\nPeers:\n", int(nLen), int(eLen))
+	fmt.Fprintf(w, frmt, m.NodeCfg.Name, m.NodeCfg.Endpoint, m.connectToNew)
+	frmt = fmt.Sprintf("  %%-%vs %%-%vs Last seen: %%v\n", int(nLen), int(eLen))
+	sort.Slice(uuids, func(i, j int) bool {
+		return m.NodeCfg.Peers[uuids[i]].Name < m.NodeCfg.Peers[uuids[j]].Name
+	})
+	for _, id := range uuids {
+		p := m.NodeCfg.Peers[id]
+		fmt.Fprintf(w, frmt, p.Name, p.Endpoint, time.Since(p.LastSeen).Truncate(time.Second))
 	}
 }
 
