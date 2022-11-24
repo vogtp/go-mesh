@@ -1,4 +1,4 @@
-module github.com/vogtp/go-grav-mesh
+module github.com/vogtp/go-mesh
 
 go 1.18
 
