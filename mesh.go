@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/suborbital/e2core/bus/bus"
+	"github.com/suborbital/grav/grav"
 	"github.com/vogtp/go-hcl"
 )
 
@@ -23,13 +23,13 @@ const (
 type Mgr struct {
 	mu             sync.Mutex
 	hcl            hcl.Logger
-	bus            *bus.Bus
+	grav           *grav.Grav
 	running        bool
 	connectToNew   bool
 	checkIntervall time.Duration
 	purgeIntervall time.Duration
-	bPod           *bus.Pod
-	rPod           *bus.Pod
+	bPod           *grav.Pod
+	rPod           *grav.Pod
 	NodeCfg        *NodeConfig
 }
 
@@ -43,14 +43,14 @@ type NodeConfig struct {
 }
 
 // New creates a mesh Mgr
-func New(g *bus.Bus, cfg *NodeConfig, settings ...Setting) *Mgr {
+func New(g *grav.Bus, cfg *NodeConfig, settings ...Setting) *Mgr {
 	if cfg.Peers == nil {
 		cfg.Peers = make(map[string]*NodeConfig, 0)
 	}
 	cfg.Endpoint = removeHTTPPrefix(cfg.Endpoint)
 	m := &Mgr{
 		hcl:            hcl.New(),
-		bus:            g,
+		grav:           g,
 		running:        true,
 		connectToNew:   true,
 		checkIntervall: 5 * time.Minute,
@@ -91,16 +91,16 @@ func (m *Mgr) updatePeers() {
 }
 
 func (m *Mgr) sendBroadcast() {
-	m.NodeCfg.NodeUUID = m.bus.NodeUUID
+	m.NodeCfg.NodeUUID = m.grav.NodeUUID
 	d, err := json.Marshal(m.NodeCfg)
 	if err != nil {
 		m.hcl.Errorf("Cannot marshal node config: %v", err)
 		return
 	}
-	p := m.bus.Connect()
+	p := m.grav.Connect()
 	defer p.Disconnect()
 	m.hcl.Debug("Sending mesh broadcast")
-	p.Send(bus.NewMsg(msgTypeBroadcast, d))
+	p.Send(grav.NewMsg(msgTypeBroadcast, d))
 }
 
 func removeHTTPPrefix(s string) string {
@@ -114,9 +114,9 @@ func removeHTTPPrefix(s string) string {
 }
 
 func (m *Mgr) startReceiver() {
-	m.bPod = m.bus.Connect()
-	m.rPod = m.bus.Connect()
-	go m.bPod.OnType(msgTypeBroadcast, func(msg bus.Message) error {
+	m.bPod = m.grav.Connect()
+	m.rPod = m.grav.Connect()
+	go m.bPod.OnType(msgTypeBroadcast, func(msg grav.Message) error {
 		ok := m.processMsg(msg)
 		if !ok || !m.connectToNew || len(m.NodeCfg.Peers) < 2 {
 			return nil
@@ -128,19 +128,19 @@ func (m *Mgr) startReceiver() {
 			m.hcl.Errorf("Cannot marshal node config: %v", err)
 			return nil
 		}
-		p := m.bus.Connect()
+		p := m.grav.Connect()
 		defer p.Disconnect()
 		m.hcl.Debug("Reply to message")
-		p.ReplyTo(msg, bus.NewMsg(msgTypeReply, d))
+		p.ReplyTo(msg, grav.NewMsg(msgTypeReply, d))
 		return nil
 	})
-	m.rPod.OnType(msgTypeReply, func(msg bus.Message) error {
+	m.rPod.OnType(msgTypeReply, func(msg grav.Message) error {
 		go m.processMsg(msg)
 		return nil
 	})
 }
 
-func (m *Mgr) processMsg(msg bus.Message) bool {
+func (m *Mgr) processMsg(msg grav.Message) bool {
 	cfg := &NodeConfig{Peers: make(map[string]*NodeConfig)}
 	if err := json.Unmarshal(msg.Data(), cfg); err != nil {
 		m.hcl.Errorf("cannot unmarshal config: %v", err)
@@ -156,7 +156,7 @@ func (m *Mgr) processMsg(msg bus.Message) bool {
 }
 
 func (m *Mgr) processPeer(cfg *NodeConfig) bool {
-	if cfg.NodeUUID == m.bus.NodeUUID {
+	if cfg.NodeUUID == m.grav.NodeUUID {
 		return false
 	}
 	m.mu.Lock()
@@ -185,7 +185,7 @@ func (m *Mgr) connectPeer(cfg *NodeConfig) error {
 	}
 	m.hcl.Infof("New mesh node: %s %s %s ", cfg.Name, cfg.NodeUUID, cfg.Endpoint)
 	cfg.Endpoint = removeHTTPPrefix(cfg.Endpoint)
-	return m.bus.ConnectEndpoint(cfg.Endpoint)
+	return m.grav.ConnectEndpoint(cfg.Endpoint)
 }
 
 // HandlerInfo serves a info page
