@@ -43,7 +43,7 @@ type NodeConfig struct {
 }
 
 // New creates a mesh Mgr
-func New(g *grav.Bus, cfg *NodeConfig, settings ...Setting) *Mgr {
+func New(g *grav.Grav, cfg *NodeConfig, settings ...Setting) *Mgr {
 	if cfg.Peers == nil {
 		cfg.Peers = make(map[string]*NodeConfig, 0)
 	}
