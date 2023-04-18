@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/suborbital/grav/grav"
-	"github.com/vogtp/go-hcl"
+	"golang.org/x/exp/slog"
 )
 
 const (
@@ -22,7 +22,7 @@ const (
 // Mgr is the mesh manager
 type Mgr struct {
 	mu             sync.Mutex
-	hcl            hcl.Logger
+	slog           *slog.Logger
 	grav           *grav.Grav
 	running        bool
 	connectToNew   bool
@@ -49,7 +49,7 @@ func New(g *grav.Grav, cfg *NodeConfig, settings ...Setting) *Mgr {
 	}
 	cfg.Endpoint = removeHTTPPrefix(cfg.Endpoint)
 	m := &Mgr{
-		hcl:            hcl.New(),
+		slog:           slog.Default(),
 		grav:           g,
 		running:        true,
 		connectToNew:   true,
@@ -94,12 +94,12 @@ func (m *Mgr) sendBroadcast() {
 	m.NodeCfg.NodeUUID = m.grav.NodeUUID
 	d, err := json.Marshal(m.NodeCfg)
 	if err != nil {
-		m.hcl.Errorf("Cannot marshal node config: %v", err)
+		m.slog.Error("Cannot marshal node config", "error", err)
 		return
 	}
 	p := m.grav.Connect()
 	defer p.Disconnect()
-	m.hcl.Debug("Sending mesh broadcast")
+	m.slog.Debug("Sending mesh broadcast")
 	p.Send(grav.NewMsg(msgTypeBroadcast, d))
 }
 
@@ -125,12 +125,12 @@ func (m *Mgr) startReceiver() {
 		defer m.mu.Unlock()
 		d, err := json.Marshal(m.NodeCfg)
 		if err != nil {
-			m.hcl.Errorf("Cannot marshal node config: %v", err)
+			m.slog.Error("Cannot marshal node config", "error", err)
 			return nil
 		}
 		p := m.grav.Connect()
 		defer p.Disconnect()
-		m.hcl.Debug("Reply to message")
+		m.slog.Debug("Reply to message")
 		p.ReplyTo(msg, grav.NewMsg(msgTypeReply, d))
 		return nil
 	})
@@ -143,10 +143,10 @@ func (m *Mgr) startReceiver() {
 func (m *Mgr) processMsg(msg grav.Message) bool {
 	cfg := &NodeConfig{Peers: make(map[string]*NodeConfig)}
 	if err := json.Unmarshal(msg.Data(), cfg); err != nil {
-		m.hcl.Errorf("cannot unmarshal config: %v", err)
+		m.slog.Error("cannot unmarshal config", "error", err)
 		return false
 	}
-	m.hcl.Tracef("Message size: %v (Peers: %v)", len(msg.Data()), len(cfg.Peers))
+	m.slog.Debug("Process message", "size", len(msg.Data()), "peer_count", len(cfg.Peers))
 	cfg.LastSeen = time.Now()
 
 	for _, p := range cfg.Peers {
@@ -168,11 +168,11 @@ func (m *Mgr) processPeer(cfg *NodeConfig) bool {
 	_, ok := m.NodeCfg.Peers[cfg.NodeUUID]
 	if ok {
 		m.NodeCfg.Peers[cfg.NodeUUID] = cfg
-		m.hcl.Debugf("Node is known: %s %s %s ", cfg.Name, cfg.NodeUUID, cfg.Endpoint)
+		m.slog.Debug("Node is known ", "name", cfg.Name, "uuid", cfg.NodeUUID, "endpoint", cfg.Endpoint)
 		return false
 	}
 	if err := m.connectPeer(cfg); err != nil {
-		m.hcl.Warnf("Cannot connect to peer %s (%s): %v", cfg.Name, cfg.Endpoint, err)
+		m.slog.Warn("Cannot connect to peer", "name", cfg.Name, "endpoint", cfg.Endpoint, "error", err)
 		return false
 	}
 	m.NodeCfg.Peers[cfg.NodeUUID] = cfg
@@ -183,7 +183,7 @@ func (m *Mgr) connectPeer(cfg *NodeConfig) error {
 	if !m.connectToNew {
 		return nil
 	}
-	m.hcl.Infof("New mesh node: %s %s %s ", cfg.Name, cfg.NodeUUID, cfg.Endpoint)
+	m.slog.Info("New mesh node", "name", cfg.Name, "uuid", cfg.NodeUUID, "endpoint", cfg.Endpoint)
 	cfg.Endpoint = removeHTTPPrefix(cfg.Endpoint)
 	return m.grav.ConnectEndpoint(cfg.Endpoint)
 }

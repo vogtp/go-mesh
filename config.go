@@ -3,16 +3,16 @@ package mesh
 import (
 	"time"
 
-	"github.com/vogtp/go-hcl"
+	"golang.org/x/exp/slog"
 )
 
 // Setting is use for optional mesh settings
 type Setting func(m *Mgr)
 
-// Hcl sets a HCL logger
-func Hcl(hcl hcl.Logger) Setting {
+// SLog sets a slog logger
+func SLog(log *slog.Logger) Setting {
 	return func(m *Mgr) {
-		m.hcl = hcl.Named("mesh")
+		m.slog = log.With("component", "mesh")
 	}
 }
 
