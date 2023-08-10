@@ -3,7 +3,7 @@ package mesh
 import (
 	"time"
 
-	"golang.org/x/exp/slog"
+	"log/slog"
 )
 
 // Setting is use for optional mesh settings

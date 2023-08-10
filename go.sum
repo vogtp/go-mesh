@@ -9,5 +9,3 @@ github.com/suborbital/grav v0.5.1 h1:D8ws9PBANCYkIcKVqnCHvpW9dn5+fn+zmCv3brgWdYo
 github.com/suborbital/grav v0.5.1/go.mod h1:WC6n7fcJghsi3L+k0eo8s97RJIi7KK2UDU8cUnjpEjU=
 github.com/suborbital/vektor v0.6.1 h1:Goh/274fy03WVleUrbqq4+6Q+B+B3zuQLmm9blqNn3M=
 github.com/suborbital/vektor v0.6.1/go.mod h1:TpoxB7PN6CRnhG9J6JDElxXG7vVkbJsvLEOzbJdJ2+4=
-golang.org/x/exp v0.0.0-20230321023759-10a507213a29 h1:ooxPy7fPvB4kwsA2h+iBNHkAbp/4JxTSwCmvdjEYmug=
-golang.org/x/exp v0.0.0-20230321023759-10a507213a29/go.mod h1:CxIveKay+FTh1D0yPZemJVgC/95VzuuOLq5Qi4xnoYc=

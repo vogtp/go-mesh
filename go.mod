@@ -2,10 +2,7 @@ module github.com/vogtp/go-mesh
 
 go 1.18
 
-require (
-	github.com/suborbital/grav v0.5.1
-	golang.org/x/exp v0.0.0-20230321023759-10a507213a29
-)
+require github.com/suborbital/grav v0.5.1
 
 require (
 	github.com/google/uuid v1.3.0 // indirect

@@ -10,8 +10,9 @@ import (
 	"sync"
 	"time"
 
+	"log/slog"
+
 	"github.com/suborbital/grav/grav"
-	"golang.org/x/exp/slog"
 )
 
 const (
