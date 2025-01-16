@@ -12,7 +12,7 @@ import (
 
 	"log/slog"
 
-	"github.com/suborbital/grav/grav"
+	"github.com/suborbital/e2core/foundation/bus/bus"
 )
 
 const (
@@ -24,13 +24,13 @@ const (
 type Mgr struct {
 	mu             sync.Mutex
 	slog           *slog.Logger
-	grav           *grav.Grav
+	bus            *bus.Bus
 	running        bool
 	connectToNew   bool
 	checkIntervall time.Duration
 	purgeIntervall time.Duration
-	bPod           *grav.Pod
-	rPod           *grav.Pod
+	bPod           *bus.Pod
+	rPod           *bus.Pod
 	NodeCfg        *NodeConfig
 }
 
@@ -44,14 +44,14 @@ type NodeConfig struct {
 }
 
 // New creates a mesh Mgr
-func New(g *grav.Grav, cfg *NodeConfig, settings ...Setting) *Mgr {
+func New(g *bus.Bus, cfg *NodeConfig, settings ...Setting) *Mgr {
 	if cfg.Peers == nil {
 		cfg.Peers = make(map[string]*NodeConfig, 0)
 	}
 	cfg.Endpoint = removeHTTPPrefix(cfg.Endpoint)
 	m := &Mgr{
 		slog:           slog.Default(),
-		grav:           g,
+		bus:            g,
 		running:        true,
 		connectToNew:   true,
 		checkIntervall: 5 * time.Minute,
@@ -92,16 +92,16 @@ func (m *Mgr) updatePeers() {
 }
 
 func (m *Mgr) sendBroadcast() {
-	m.NodeCfg.NodeUUID = m.grav.NodeUUID
+	m.NodeCfg.NodeUUID = m.bus.NodeUUID
 	d, err := json.Marshal(m.NodeCfg)
 	if err != nil {
 		m.slog.Error("Cannot marshal node config", "error", err)
 		return
 	}
-	p := m.grav.Connect()
+	p := m.bus.Connect()
 	defer p.Disconnect()
 	m.slog.Debug("Sending mesh broadcast")
-	p.Send(grav.NewMsg(msgTypeBroadcast, d))
+	p.Send(bus.NewMsg(msgTypeBroadcast, d))
 }
 
 func removeHTTPPrefix(s string) string {
@@ -115,9 +115,9 @@ func removeHTTPPrefix(s string) string {
 }
 
 func (m *Mgr) startReceiver() {
-	m.bPod = m.grav.Connect()
-	m.rPod = m.grav.Connect()
-	go m.bPod.OnType(msgTypeBroadcast, func(msg grav.Message) error {
+	m.bPod = m.bus.Connect()
+	m.rPod = m.bus.Connect()
+	go m.bPod.OnType(msgTypeBroadcast, func(msg bus.Message) error {
 		ok := m.processMsg(msg)
 		if !ok || !m.connectToNew || len(m.NodeCfg.Peers) < 2 {
 			return nil
@@ -129,19 +129,19 @@ func (m *Mgr) startReceiver() {
 			m.slog.Error("Cannot marshal node config", "error", err)
 			return nil
 		}
-		p := m.grav.Connect()
+		p := m.bus.Connect()
 		defer p.Disconnect()
 		m.slog.Debug("Reply to message")
-		p.ReplyTo(msg, grav.NewMsg(msgTypeReply, d))
+		p.ReplyTo(msg, bus.NewMsg(msgTypeReply, d))
 		return nil
 	})
-	m.rPod.OnType(msgTypeReply, func(msg grav.Message) error {
+	m.rPod.OnType(msgTypeReply, func(msg bus.Message) error {
 		go m.processMsg(msg)
 		return nil
 	})
 }
 
-func (m *Mgr) processMsg(msg grav.Message) bool {
+func (m *Mgr) processMsg(msg bus.Message) bool {
 	cfg := &NodeConfig{Peers: make(map[string]*NodeConfig)}
 	if err := json.Unmarshal(msg.Data(), cfg); err != nil {
 		m.slog.Error("cannot unmarshal config", "error", err)
@@ -157,7 +157,7 @@ func (m *Mgr) processMsg(msg grav.Message) bool {
 }
 
 func (m *Mgr) processPeer(cfg *NodeConfig) bool {
-	if cfg.NodeUUID == m.grav.NodeUUID {
+	if cfg.NodeUUID == m.bus.NodeUUID {
 		return false
 	}
 	m.mu.Lock()
@@ -186,7 +186,7 @@ func (m *Mgr) connectPeer(cfg *NodeConfig) error {
 	}
 	m.slog.Info("New mesh node", "name", cfg.Name, "uuid", cfg.NodeUUID, "endpoint", cfg.Endpoint)
 	cfg.Endpoint = removeHTTPPrefix(cfg.Endpoint)
-	return m.grav.ConnectEndpoint(cfg.Endpoint)
+	return m.bus.ConnectEndpoint(cfg.Endpoint)
 }
 
 // HandlerInfo serves a info page
