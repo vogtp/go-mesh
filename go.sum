@@ -1,13 +1,15 @@
 github.com/google/go-cmp v0.5.8 h1:e6P7q2lk1O+qJJb4BtCQXlK8vWEO8V1ZeuEdJNOqZyg=
 github.com/google/uuid v1.3.0 h1:t6JiXgmwXMjEs8VusXIJk2BXHsn+wx8BZdTaoZ5fu7I=
 github.com/google/uuid v1.3.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
+github.com/google/uuid v1.6.0 h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=
+github.com/google/uuid v1.6.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
-github.com/sethvargo/go-envconfig v0.8.2 h1:DDUVuG21RMgeB/bn4leclUI/837y6cQCD4w8hb5797k=
-github.com/sethvargo/go-envconfig v0.8.2/go.mod h1:Iz1Gy1Sf3T64TQlJSvee81qDhf7YIlt8GMUX6yyNFs0=
 github.com/sethvargo/go-envconfig v0.8.3 h1:dXyUrDCJvCm3ybP7yNpiux93qoSORvuH23bdsgFfiJ0=
 github.com/sethvargo/go-envconfig v0.8.3/go.mod h1:Iz1Gy1Sf3T64TQlJSvee81qDhf7YIlt8GMUX6yyNFs0=
 github.com/suborbital/e2core v0.5.1 h1:GRFbOjtu0atcPUqMLaPGZW6tyROtp8whYO2hW0Vtw5I=
 github.com/suborbital/e2core v0.5.1/go.mod h1:EV8Pm5WeeUjXi++cU2rYXrEZ0vITF3aILzsZTTYwVW4=
 github.com/suborbital/vektor v0.6.1 h1:Goh/274fy03WVleUrbqq4+6Q+B+B3zuQLmm9blqNn3M=
 github.com/suborbital/vektor v0.6.1/go.mod h1:TpoxB7PN6CRnhG9J6JDElxXG7vVkbJsvLEOzbJdJ2+4=
+github.com/suborbital/vektor v0.7.0 h1:EiDHDEuJvhX1ZxI5e4xGyvX/6CUCz1LmFPLm6Dzbx94=
+github.com/suborbital/vektor v0.7.0/go.mod h1:zLt1E0E1oe6iBnl4Y0ywC7LrtdCLO0di/CXw0HznHic=
